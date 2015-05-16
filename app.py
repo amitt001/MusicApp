@@ -6,6 +6,7 @@ import json
 from flask import Flask, jsonify, abort, make_response, request, url_for
 
 import savedb
+import ycrawl
 
 app = Flask(__name__)
 pp = pprint.PrettyPrinter()
@@ -13,6 +14,19 @@ pp = pprint.PrettyPrinter()
 @app.route('/')
 def index():
     return 'Hello API!'
+
+@app.route('/admin/<int:key>')    
+def admin(key):
+
+    """
+        serious stuff going on
+    """
+    print("crawling")
+    ycrawl.filereader("songslist.txt")
+    print("binding links...")
+    savedb.bind()
+    print("forming recommendations...")
+    savedb.formrec()
 
 @app.route('/api/login', methods=['POST', 'GET'])
 def login():
@@ -35,15 +49,25 @@ def login():
     return uhash
 
 
-@app.route('/api/songs/get/<int:task_id>', methods=['GET', 'POST'])
+@app.route('/api/songs/get/<string:task_id>', methods=['GET', 'POST'])
 def get_songs_byid(task_id): #for each ID
     #sends songs on get request by client
+
+
+    """
+    ccreate a binding for song and youtube
+    create list of top songs that changes as user listens
+    """
+
+
+    #data = savedb.get_data(task_id)
+    #savedb.formrec()
+    return jsonify(savedb.get_recommendations(task_id)[-1]['data'])
     atask = {}
     a = json.load(open('usersongs.txt'))
-    #a = a['2013']
     atask.setdefault('songs', a)
-
-    return jsonify({'task': atask})
+    #return jsonify({'task': atask})
+    return jsonify(atask)
 
 
 @app.route('/api/songs/data', methods=['POST'])
@@ -61,7 +85,7 @@ def create_task():
         json.dump(request.json, fobj)
         fobj.write("\n")
     #print request.json.values()
-    pp.pprint(request.json)
+    #pp.pprint(request.json)
     postdata = {x for x in request.json}
     savedb.usersongs(request.json.keys()[0], json.loads(request.json.values()[0]))
 
